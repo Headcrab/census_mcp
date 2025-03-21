@@ -26,11 +26,14 @@ func TestCensusAPI_GetStatePopulation(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 
 		// Возвращаем тестовые данные в формате Census API
-		w.Write([]byte(`[
+		_, err := w.Write([]byte(`[
 			["NAME", "B01001_001E", "state"],
 			["California", "39538223", "06"],
 			["Texas", "29145505", "48"]
 		]`))
+		if err != nil {
+			t.Errorf("Ошибка при записи ответа: %v", err)
+		}
 	}))
 	defer server.Close()
 
