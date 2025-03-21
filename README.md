@@ -1,7 +1,7 @@
 # Census API MCP Сервер
 
 [![Go Version](https://img.shields.io/github/go-mod/go-version/Headcrab/census_mcp)](https://go.dev)
-[![License](https://img.shields.io/github/license/Headcrab/census_mcp)](LICENSE)
+[![License](https://github.com/Headcrab/census_mcp/blob/main/LICENSE)](LICENSE)
 [![Coverage](https://codecov.io/gh/Headcrab/census_mcp/graph/badge.svg?token=WSRWMHXMTA)](https://codecov.io/gh/Headcrab/census_mcp)
 
 Этот проект представляет собой пример MCP-совместимого сервера для работы с Census API (API переписи населения США).

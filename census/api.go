@@ -518,7 +518,7 @@ func (f *TextFormatter) Format(data interface{}) string {
 		result := "Доступные наборы данных Census API:\n\n"
 
 		for _, item := range v {
-			result += fmt.Sprintf("Набор данных: %s\n", item.Dataset)
+			result += fmt.Sprintf("Идентификатор: %s\n", item.Dataset)
 			result += fmt.Sprintf("Название: %s\n", item.Title)
 
 			if item.Description != "" {
@@ -534,8 +534,8 @@ func (f *TextFormatter) Format(data interface{}) string {
 		result := "Доступные переменные Census API:\n\n"
 
 		for name, info := range v {
-			result += fmt.Sprintf("Имя: %s\n", name)
-			result += fmt.Sprintf("Метка: %s\n", info.Label)
+			result += fmt.Sprintf("Переменная: %s\n", name)
+			result += fmt.Sprintf("Название: %s\n", info.Label)
 
 			if info.Concept != "" {
 				result += fmt.Sprintf("Концепция: %s\n", info.Concept)
@@ -557,14 +557,14 @@ func (f *TextFormatter) Format(data interface{}) string {
 		result := "Доступные географические уровни Census API:\n\n"
 
 		for _, level := range v {
-			result += fmt.Sprintf("Название: %s\n", level.Name)
+			result += fmt.Sprintf("Уровень: %s\n", level.Name)
 			result += fmt.Sprintf("Описание: %s\n", level.Description)
 
 			if len(level.RequiredFor) > 0 {
-				result += fmt.Sprintf("Требуется для: %s\n", strings.Join(level.RequiredFor, ", "))
+				result += fmt.Sprintf("Требуется указать: %s\n", strings.Join(level.RequiredFor, ", "))
 			}
 
-			result += fmt.Sprintf("Поддерживает wildcards: %t\n", level.Wildcards)
+			result += fmt.Sprintf("Поддержка wildcard: %s\n", boolToYesNo(level.Wildcards))
 			result += "\n"
 		}
 
@@ -582,7 +582,8 @@ func (f *TextFormatter) Format(data interface{}) string {
 			headers = append(headers, header)
 		}
 
-		for _, item := range v {
+		for i, item := range v {
+			result += fmt.Sprintf("Запись %d:\n", i+1)
 			for _, header := range headers {
 				if value, ok := item[header]; ok {
 					result += fmt.Sprintf("%s: %s\n", header, value)
@@ -623,11 +624,18 @@ func (f *TextFormatter) CountLetters(word, letters string) map[rune]int {
 	for _, char := range word {
 		for _, letter := range letters {
 			if char == letter {
-				result[char]++
-				break
+				result[letter]++
 			}
 		}
 	}
 
 	return result
+}
+
+// boolToYesNo преобразует булево значение в строку "Да" или "Нет"
+func boolToYesNo(value bool) string {
+	if value {
+		return "Да"
+	}
+	return "Нет"
 }
