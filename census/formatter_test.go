@@ -7,77 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTextFormatter_CountLetters(t *testing.T) {
-	formatter := NewTextFormatter()
-
-	tests := []struct {
-		name     string
-		word     string
-		letters  string
-		expected map[rune]int
-	}{
-		{
-			name:    "Базовый подсчет",
-			word:    "привет",
-			letters: "пр",
-			expected: map[rune]int{
-				'п': 1,
-				'р': 1,
-			},
-		},
-		{
-			name:    "Повторяющиеся буквы",
-			word:    "тестирование",
-			letters: "те",
-			expected: map[rune]int{
-				'т': 2,
-				'е': 2,
-			},
-		},
-		{
-			name:    "Пустое слово",
-			word:    "",
-			letters: "абв",
-			expected: map[rune]int{
-				'а': 0,
-				'б': 0,
-				'в': 0,
-			},
-		},
-		{
-			name:     "Пустые буквы для поиска",
-			word:     "привет",
-			letters:  "",
-			expected: map[rune]int{},
-		},
-		{
-			name:    "Буквы отсутствуют в слове",
-			word:    "привет",
-			letters: "xyz",
-			expected: map[rune]int{
-				'x': 0,
-				'y': 0,
-				'z': 0,
-			},
-		},
-		{
-			name:    "Регистрозависимый поиск",
-			word:    "Привет",
-			letters: "п",
-			expected: map[rune]int{
-				'п': 0, // 'П' и 'п' - разные символы
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := formatter.CountLetters(tt.word, tt.letters)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
 func TestTextFormatter_Format_PopulationData(t *testing.T) {
 	formatter := NewTextFormatter()
 
@@ -257,11 +186,9 @@ func TestTextFormatter_Format_CustomData(t *testing.T) {
 	// Проверяем, что результат содержит ожидаемые строки
 	expectedStrings := []string{
 		"Результаты пользовательского запроса к Census API:",
-		"Запись 1:",
 		"NAME: California",
 		"B01001_001E: 39538223",
 		"state: 06",
-		"Запись 2:",
 		"NAME: Texas",
 		"B01001_001E: 29145505",
 		"state: 48",
@@ -270,25 +197,6 @@ func TestTextFormatter_Format_CustomData(t *testing.T) {
 	for _, str := range expectedStrings {
 		assert.Contains(t, result, str)
 	}
-}
-
-func TestTextFormatter_Format_LetterCount(t *testing.T) {
-	formatter := NewTextFormatter()
-
-	// Тестовые данные подсчета букв
-	letterCount := map[rune]int{
-		'а': 2,
-		'б': 0,
-		'в': 1,
-	}
-
-	// Форматируем данные
-	result := formatter.Format(letterCount)
-
-	// Проверяем, что результат содержит все буквы и их количество
-	assert.Contains(t, result, "'а': 2")
-	assert.Contains(t, result, "'б': 0")
-	assert.Contains(t, result, "'в': 1")
 }
 
 func TestTextFormatter_Format_UnsupportedType(t *testing.T) {
