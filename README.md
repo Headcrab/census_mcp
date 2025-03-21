@@ -1,8 +1,6 @@
 # Census API MCP Сервер
 
-[![Go Version](https://img.shields.io/github/go-mod/go-version/Headcrab/census_mcp)](https://go.dev)
-[![License](https://img.shields.io/github/license/Headcrab/census_mcp)](LICENSE)
-[![Coverage](https://codecov.io/gh/Headcrab/census_mcp/graph/badge.svg?token=WSRWMHXMTA)](https://codecov.io/gh/Headcrab/census_mcp)
+[![Go Version](https://img.shields.io/github/go-mod/go-version/Headcrab/census_mcp)](https://go.dev) [![GitHub License](https://img.shields.io/github/license/Headcrab/census_mcp)](LICENSE) [![Coverage](https://codecov.io/gh/Headcrab/census_mcp/graph/badge.svg?token=WSRWMHXMTA)](https://codecov.io/gh/Headcrab/census_mcp)
 
 Этот проект представляет собой пример MCP-совместимого сервера для работы с Census API (API переписи населения США).
 
@@ -19,8 +17,6 @@
 - Поддержка различных транспортов (stdio и SSE)
 
 ## Структура проекта
-
-Проект имеет четкое разделение ответственности по принципам SOLID:
 
 ```tree
 census-mcp/
@@ -44,8 +40,8 @@ census-mcp/
 ### Установка
 
 ```bash
-git clone https://github.com/yourusername/census-mcp.git
-cd census-mcp
+git clone https://github.com/Headcrab/census_mcp.git
+cd census_mcp
 go build -o census-mcp
 ```
 
