@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  census_mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: census_mcp:latest
+    container_name: census_mcp
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      - PORT=${PORT:-8080}
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs 
