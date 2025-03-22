@@ -1,7 +1,8 @@
 package census
 
 import (
-	"strings"
+	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,18 +27,16 @@ func TestTextFormatter_Format_PopulationData(t *testing.T) {
 	}
 
 	// Форматируем данные
-	result := formatter.Format(popData)
+	result := formatter.Format(context.Background(), popData)
 
 	// Проверяем, что результат содержит ожидаемые строки
 	expectedStrings := []string{
-		"Результаты запроса к Census API:",
-		"Название: California",
-		"Население: 39538223",
-		"Код штата: 06",
-		"Название: Los Angeles County",
-		"Население: 10014009",
-		"Код штата: 06",
-		"Код округа: 037",
+		"Регион",
+		"Население",
+		"California (штат 06)",
+		"39538223",
+		"Los Angeles County (округ 037, штат 06)",
+		"10014009",
 	}
 
 	for _, str := range expectedStrings {
@@ -65,19 +64,19 @@ func TestTextFormatter_Format_DatasetInfo(t *testing.T) {
 	}
 
 	// Форматируем данные
-	result := formatter.Format(datasets)
+	result := formatter.Format(context.Background(), datasets)
 
 	// Проверяем, что результат содержит ожидаемые строки
 	expectedStrings := []string{
-		"Доступные наборы данных Census API:",
-		"Название: American Community Survey 1-Year Estimates",
-		"Описание: Annual survey covering demographic data",
-		"Идентификатор: acs/acs1",
-		"Доступные годы: 2019, 2020, 2021",
-		"Название: Decennial Census",
-		"Описание: Complete count of the US population",
-		"Идентификатор: dec/sf1",
-		"Доступные годы: 2000, 2010, 2020",
+		"# Доступные наборы данных",
+		"## American Community Survey 1-Year Estimates",
+		"**ID набора**: acs/acs1",
+		"**Описание**: Annual survey covering demographic data",
+		"**Доступные годы**: 2019, 2020, 2021",
+		"## Decennial Census",
+		"**ID набора**: dec/sf1",
+		"**Описание**: Complete count of the US population",
+		"**Доступные годы**: 2000, 2010, 2020",
 	}
 
 	for _, str := range expectedStrings {
@@ -105,19 +104,17 @@ func TestTextFormatter_Format_VariableInfo(t *testing.T) {
 	}
 
 	// Форматируем данные
-	result := formatter.Format(variables)
+	result := formatter.Format(context.Background(), variables)
 
 	// Проверяем, что результат содержит ожидаемые строки
 	expectedStrings := []string{
-		"Доступные переменные Census API:",
-		"Переменная: B01001_001E",
-		"Название: Total Population",
-		"Описание: Total population count",
-		"Концепция: SEX BY AGE",
-		"Группа: B01001",
-		"Переменная: NAME",
-		"Название: Geographic Area Name",
-		"Описание: Name of the geographic area",
+		"# Доступные переменные",
+		"## B01001_001E: Total Population",
+		"**Описание**: Total population count",
+		"**Концепция**: SEX BY AGE",
+		"**Группа**: B01001",
+		"## NAME: Geographic Area Name",
+		"**Описание**: Name of the geographic area",
 	}
 
 	for _, str := range expectedStrings {
@@ -144,18 +141,18 @@ func TestTextFormatter_Format_GeographyLevel(t *testing.T) {
 	}
 
 	// Форматируем данные
-	result := formatter.Format(levels)
+	result := formatter.Format(context.Background(), levels)
 
 	// Проверяем, что результат содержит ожидаемые строки
 	expectedStrings := []string{
-		"Доступные географические уровни Census API:",
-		"Уровень: state",
-		"Описание: States and Equivalent",
-		"Поддержка wildcard: Да",
-		"Уровень: county",
-		"Описание: Counties and Equivalent",
-		"Требуется указать: state",
-		"Поддержка wildcard: Да",
+		"# Доступные географические уровни",
+		"## state",
+		"**Описание**: States and Equivalent",
+		"**Поддержка подстановочных знаков**: true",
+		"## county",
+		"**Описание**: Counties and Equivalent",
+		"**Требуется для**: state",
+		"**Поддержка подстановочных знаков**: true",
 	}
 
 	for _, str := range expectedStrings {
@@ -181,17 +178,19 @@ func TestTextFormatter_Format_CustomData(t *testing.T) {
 	}
 
 	// Форматируем данные
-	result := formatter.Format(customData)
+	result := formatter.Format(context.Background(), customData)
 
-	// Проверяем, что результат содержит ожидаемые строки
+	// Проверяем наличие заголовков таблицы и данных
 	expectedStrings := []string{
-		"Результаты пользовательского запроса к Census API:",
-		"NAME: California",
-		"B01001_001E: 39538223",
-		"state: 06",
-		"NAME: Texas",
-		"B01001_001E: 29145505",
-		"state: 48",
+		"NAME",
+		"B01001_001E",
+		"state",
+		"California",
+		"39538223",
+		"06",
+		"Texas",
+		"29145505",
+		"48",
 	}
 
 	for _, str := range expectedStrings {
@@ -206,17 +205,14 @@ func TestTextFormatter_Format_UnsupportedType(t *testing.T) {
 	unsupportedData := 123
 
 	// Форматируем данные
-	result := formatter.Format(unsupportedData)
+	result := formatter.Format(context.Background(), unsupportedData)
 
-	// Проверяем, что результат содержит сообщение об ошибке
-	assert.True(t, strings.Contains(result, "Неподдерживаемый тип данных") ||
-		strings.Contains(result, "не поддерживается"),
-		"Результат должен содержать сообщение о неподдерживаемом типе")
+	// Проверяем, что результат просто содержит строковое представление числа
+	assert.Equal(t, "123", result)
 }
 
 func TestNewTextFormatter(t *testing.T) {
 	formatter := NewTextFormatter()
 	assert.NotNil(t, formatter)
-	_, ok := formatter.(*TextFormatter)
-	assert.True(t, ok)
+	assert.Equal(t, "*census.TextFormatter", fmt.Sprintf("%T", formatter))
 }

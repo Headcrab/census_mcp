@@ -24,11 +24,11 @@ type MockCensusAPIClient struct {
 
 // MockFormatter - мок для интерфейса Formatter
 type MockFormatter struct {
-	FormatFunc func(data interface{}) string
+	FormatFunc func(ctx context.Context, data interface{}) string
 }
 
-func (m *MockFormatter) Format(data interface{}) string {
-	return m.FormatFunc(data)
+func (m *MockFormatter) Format(ctx context.Context, data interface{}) string {
+	return m.FormatFunc(ctx, data)
 }
 
 func (m *MockCensusAPIClient) GetStatePopulation(stateID string) ([]census.PopulationData, error) {
@@ -127,7 +127,7 @@ func TestCensusDefaultToolHandler_HandleGetStatePopulationTool(t *testing.T) {
 
 			// Создаем мок-форматтер
 			mockFormatter := &MockFormatter{
-				FormatFunc: func(data interface{}) string {
+				FormatFunc: func(ctx context.Context, data interface{}) string {
 					if tt.expectError {
 						t.Fatalf("Formatter не должен вызываться при ошибке")
 					}
@@ -215,7 +215,7 @@ func TestCensusDefaultToolHandler_HandleGetCountyPopulationTool(t *testing.T) {
 
 			// Создаем мок-форматтер
 			mockFormatter := &MockFormatter{
-				FormatFunc: func(data interface{}) string {
+				FormatFunc: func(ctx context.Context, data interface{}) string {
 					if tt.expectError {
 						t.Fatalf("Formatter не должен вызываться при ошибке")
 					}
@@ -325,7 +325,7 @@ func TestCensusDefaultToolHandler_HandleSearchStateByNameTool(t *testing.T) {
 
 			// Создаем мок-форматтер
 			mockFormatter := &MockFormatter{
-				FormatFunc: func(data interface{}) string {
+				FormatFunc: func(ctx context.Context, data interface{}) string {
 					if tt.expectError || len(tt.mockData) == 0 {
 						return tt.expectedOutput
 					}
@@ -383,7 +383,11 @@ func TestCensusDefaultToolHandler_HandleSearchStateByNameTool(t *testing.T) {
 func TestNewCensusToolHandler(t *testing.T) {
 	// Создаем мок-объекты
 	mockAPI := &MockCensusAPIClient{}
-	mockFormatter := &MockFormatter{}
+	mockFormatter := &MockFormatter{
+		FormatFunc: func(ctx context.Context, data interface{}) string {
+			return "mock formatted data"
+		},
+	}
 
 	// Проверяем создание обработчика
 	handler := NewCensusToolHandler(mockAPI, mockFormatter)

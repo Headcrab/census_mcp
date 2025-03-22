@@ -3,10 +3,25 @@ package census
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
+)
+
+// Константы для ключей логирования
+const (
+	key_state_id    = "state_id"
+	key_endpoint    = "endpoint"
+	key_err         = "err"
+	key_status_code = "status_code"
+	key_count       = "count"
+	key_name        = "name"
+	key_search_name = "search_name"
+	key_dataset     = "dataset"
+	key_year        = "year"
+	key_request     = "request"
 )
 
 // CensusAPI представляет собой клиент для API переписи населения
@@ -17,6 +32,7 @@ type CensusAPI struct {
 
 // NewCensusAPI создает новый экземпляр клиента CensusAPI
 func NewCensusAPI(apiKey string) *CensusAPI {
+	slog.Debug("Создание нового клиента CensusAPI с ключом API")
 	return &CensusAPI{
 		apiKey: apiKey,
 		client: &http.Client{},
@@ -25,10 +41,13 @@ func NewCensusAPI(apiKey string) *CensusAPI {
 
 // NewCensusAPIFromEnv создает новый экземпляр клиента CensusAPI, используя ключ API из переменной окружения
 func NewCensusAPIFromEnv() (*CensusAPI, error) {
+	slog.Debug("Создание клиента CensusAPI из переменной окружения")
 	apiKey := os.Getenv("CENSUS_API_KEY")
 	if apiKey == "" {
+		slog.Error("Переменная окружения CENSUS_API_KEY не установлена")
 		return nil, fmt.Errorf("переменная окружения CENSUS_API_KEY не установлена")
 	}
+	slog.Debug("Ключ API получен из переменной окружения")
 	return NewCensusAPI(apiKey), nil
 }
 
@@ -94,6 +113,8 @@ type CensusAPIClient interface {
 
 // GetStatePopulation возвращает данные о населении для указанного штата
 func (c *CensusAPI) GetStatePopulation(stateID string) ([]PopulationData, error) {
+	slog.Info("Получение данных о населении штата", key_state_id, stateID)
+
 	endpoint := "https://api.census.gov/data/2021/acs/acs1"
 
 	params := url.Values{}
@@ -108,26 +129,42 @@ func (c *CensusAPI) GetStatePopulation(stateID string) ([]PopulationData, error)
 	params.Add("key", c.apiKey)
 
 	requestURL := fmt.Sprintf("%s?%s", endpoint, params.Encode())
+	slog.Debug("Отправка запроса к Census API", key_endpoint, endpoint)
 
 	resp, err := c.client.Get(requestURL)
 	if err != nil {
+		slog.Error("Ошибка при отправке запроса",
+			key_err, err,
+			key_endpoint, endpoint)
 		return nil, fmt.Errorf("ошибка при отправке запроса: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		slog.Error("API вернул неуспешный статус",
+			key_status_code, resp.StatusCode,
+			key_endpoint, endpoint)
 		return nil, fmt.Errorf("API вернул статус %d", resp.StatusCode)
 	}
 
 	// Census API возвращает массив массивов, первый массив содержит заголовки
 	var rawData [][]string
 	if err := json.NewDecoder(resp.Body).Decode(&rawData); err != nil {
+		slog.Error("Ошибка при декодировании ответа",
+			key_err, err,
+			key_endpoint, endpoint)
 		return nil, fmt.Errorf("ошибка при декодировании ответа: %w", err)
 	}
 
 	if len(rawData) < 2 {
+		slog.Error("API вернул пустой результат",
+			key_endpoint, endpoint)
 		return nil, fmt.Errorf("API вернул пустой результат")
 	}
+
+	slog.Debug("Получены данные из Census API",
+		key_count, len(rawData)-1,
+		key_endpoint, endpoint)
 
 	// Первый массив - это заголовки
 	headers := rawData[0]
@@ -160,29 +197,38 @@ func (c *CensusAPI) GetStatePopulation(stateID string) ([]PopulationData, error)
 
 // GetCountyPopulation возвращает данные о населении для округов в указанном штате
 func (c *CensusAPI) GetCountyPopulation(stateID string) ([]PopulationData, error) {
+	slog.Info("Получение данных о населении округов", key_state_id, stateID)
+
 	endpoint := "https://api.census.gov/data/2021/acs/acs1"
 
 	params := url.Values{}
 	params.Add("get", "NAME,B01001_001E")
 
 	if stateID != "" {
-		params.Add("for", "county:*")
-		params.Add("in", fmt.Sprintf("state:%s", stateID))
+		params.Add("for", fmt.Sprintf("county:*&in=state:%s", stateID))
 	} else {
+		// Запрос всех округов во всех штатах
 		params.Add("for", "county:*")
 	}
 
 	params.Add("key", c.apiKey)
 
 	requestURL := fmt.Sprintf("%s?%s", endpoint, params.Encode())
+	slog.Debug("Отправка запроса к Census API", key_endpoint, endpoint)
 
 	resp, err := c.client.Get(requestURL)
 	if err != nil {
+		slog.Error("Ошибка при отправке запроса",
+			key_err, err,
+			key_endpoint, endpoint)
 		return nil, fmt.Errorf("ошибка при отправке запроса: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		slog.Error("API вернул неуспешный статус",
+			key_status_code, resp.StatusCode,
+			key_endpoint, endpoint)
 		return nil, fmt.Errorf("API вернул статус %d", resp.StatusCode)
 	}
 
@@ -224,8 +270,14 @@ func (c *CensusAPI) GetCountyPopulation(stateID string) ([]PopulationData, error
 
 // SearchStateByName ищет штат по названию (полному или частичному)
 func (c *CensusAPI) SearchStateByName(name string) ([]PopulationData, error) {
+	slog.Info("Поиск штата по названию", key_name, name)
+
+	// Получаем все штаты
 	states, err := c.GetStatePopulation("")
 	if err != nil {
+		slog.Error("Ошибка при получении данных о штатах для поиска",
+			key_err, err,
+			key_search_name, name)
 		return nil, err
 	}
 
@@ -241,6 +293,8 @@ func (c *CensusAPI) SearchStateByName(name string) ([]PopulationData, error) {
 
 // GetAvailableDatasets возвращает список доступных наборов данных
 func (c *CensusAPI) GetAvailableDatasets() ([]DatasetInfo, error) {
+	slog.Info("Получение списка доступных наборов данных")
+
 	endpoint := "https://api.census.gov/data.json"
 
 	resp, err := c.client.Get(endpoint)
@@ -321,6 +375,10 @@ func (c *CensusAPI) GetAvailableDatasets() ([]DatasetInfo, error) {
 
 // GetVariables возвращает список доступных переменных для набора данных
 func (c *CensusAPI) GetVariables(dataset, year string) (map[string]VariableInfo, error) {
+	slog.Info("Получение списка переменных",
+		key_dataset, dataset,
+		key_year, year)
+
 	if dataset == "" || year == "" {
 		return nil, fmt.Errorf("необходимо указать набор данных и год")
 	}
@@ -367,6 +425,10 @@ func (c *CensusAPI) GetVariables(dataset, year string) (map[string]VariableInfo,
 
 // GetGeographyLevels возвращает доступные географические уровни для набора данных
 func (c *CensusAPI) GetGeographyLevels(dataset, year string) ([]GeographyLevel, error) {
+	slog.Info("Получение доступных географических уровней",
+		key_dataset, dataset,
+		key_year, year)
+
 	if dataset == "" || year == "" {
 		return nil, fmt.Errorf("необходимо указать набор данных и год")
 	}
@@ -412,6 +474,9 @@ func (c *CensusAPI) GetGeographyLevels(dataset, year string) ([]GeographyLevel, 
 
 // GetCustomData позволяет запросить пользовательские данные
 func (c *CensusAPI) GetCustomData(request CustomDataRequest) ([]map[string]string, error) {
+	slog.Info("Получение пользовательских данных",
+		key_request, request)
+
 	if len(request.Variables) == 0 {
 		return nil, fmt.Errorf("необходимо указать хотя бы одну переменную")
 	}

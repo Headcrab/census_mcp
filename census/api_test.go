@@ -1,6 +1,7 @@
 package census
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -106,22 +107,21 @@ func TestTextFormatter_Format(t *testing.T) {
 	}
 
 	// Форматируем данные
-	result := formatter.Format(data)
+	result := formatter.Format(context.Background(), data)
 
-	// Проверяем, что результат содержит ожидаемые строки
-	expectedStrings := []string{
-		"Результаты запроса к Census API:",
-		"Название: California",
-		"Население: 39538223",
-		"Код штата: 06",
-		"Название: Los Angeles County",
-		"Население: 9818605",
-		"Код штата: 06",
-		"Код округа: 037",
-	}
-
+	// Выводим результат для отладки
 	if testing.Verbose() {
 		t.Logf("Результат форматирования: %s", result)
+	}
+
+	// Проверяем, что результат содержит ожидаемые строки в новом формате
+	expectedStrings := []string{
+		"Регион",
+		"Население",
+		"California (штат 06)",
+		"39538223",
+		"Los Angeles County (округ 037, штат 06)",
+		"9818605",
 	}
 
 	for _, str := range expectedStrings {

@@ -25,8 +25,10 @@ COPY --from=builder /app/census_mcp ./
 # Создаем директорию для логов
 RUN mkdir -p /app/logs
 
-# Установка переменной окружения для порта (по умолчанию 8080)
-ENV PORT=8080
+# Установка переменных окружения
+# из docker-compose.yml
+ENV PORT=${PORT:-8080}
+ENV CENSUS_API_KEY=${CENSUS_API_KEY}
 
 # Запуск сервера через SSE с заданным портом
-ENTRYPOINT ["sh", "-c", "./census_mcp -t sse"]
+ENTRYPOINT ["sh", "-c", "./census_mcp -t sse -k $CENSUS_API_KEY"]
